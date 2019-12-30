@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE configuration PUBLIC "-//mybatis.org//DTD Config 3.0//EN" "http://mybatis.org/dtd/mybatis-3-config.dtd">
+<!--配置别名文件 --> 
+<configuration>
+    <typeAliases>
+    	<!-- 方式一  -->
+        <!-- <package name="com.onepage.dao.Student" /> -->
+        <!-- 方式二  此种方式别名要和类名一致 不然会找不到实体类-->
+        <typeAlias alias="Student" type="com.onepage.dao.Student"/>
+    </typeAliases>
+   
+</configuration> 
+
+

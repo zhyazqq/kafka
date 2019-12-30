@@ -1,0 +1,35 @@
+server:
+   port: 8082
+spring:
+    datasource:
+# mysql 
+        url: jdbc:mysql://127.0.0.1:3306/zqqd1?useUnicode=true&useSSL=false&characterEncoding=utf8&useSSL=true&serverTimezone=UTC
+        username: root
+        password: 123456
+        driverClassName: com.mysql.cj.jdbc.Driver
+ # oracle 
+        #url: jdbc:oracle:thin:@127.0.0.1:1521:ORACLE
+        #username: zqq
+        #password: 123456
+        #driverClassName: oracle.jdbc.driver.OracleDriver
+        
+        #默认连接池配置r
+        hikari:
+          minimum-idle: 5
+          maximum-pool-size: 50
+          auto-commit: true
+          idle-timeout: 30000
+          pool-name: DatebookHikariCP
+          max-lifetime: 1800000
+          connection-timeout: 100001
+
+mybatis:
+  check-config-location: true
+  #扫描别名配置文件
+  type-aliases-package: com.onepage.dao
+  config-locations: classpath:mybatis/mybatis-config.xml
+  configuration:
+     map-underscore-to-camel-case: true
+     cache-enabled: false
+  #扫描*mapper。xml文件
+  mapper-locations: classpath*:mybatis/mapper/*.xml
