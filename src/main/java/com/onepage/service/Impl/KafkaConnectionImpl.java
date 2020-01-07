@@ -11,6 +11,7 @@ import java.util.Properties;
 
 import javax.annotation.Resource;
 
+import org.apache.kafka.clients.consumer.ConsumerConfig;
 import org.apache.kafka.clients.consumer.ConsumerRecord;
 import org.apache.kafka.clients.consumer.ConsumerRecords;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
@@ -27,8 +28,8 @@ import com.onepage.service.KafkaConnection;
 @Service
 public class KafkaConnectionImpl implements KafkaConnection {
 	// 启动zookeeper
-	// 启动kafka命令 在安装目录 bin文件夹那一层 不要进入bin文件 .\bin\windows\kafka-server-start.bat
-	// .\config\server.properties
+	// 启动kafka命令 在安装目录 bin文件夹那一层 不要进入bin文件 .\bin\windows\kafka-server-start.bat .\config\server.properties
+	// 
 //查看消息命令 在安装目录 bin文件夹那一层 不要进入bin文件 shift+右键开启shell 输入  .\bin\windows\kafka-console-consumer.bat --bootstrap-server 192.168.10.104:9092 --topic test_topic_1 --from-beginning
 	@Resource
 	private AddMapper add;
@@ -37,8 +38,9 @@ public class KafkaConnectionImpl implements KafkaConnection {
 
 	@Override
 	public boolean isConnection(String IP, Integer port) {
+		//生产者
 		HashMap<String, Object> props = new HashMap<String, Object>();
-		props.put("zookeeper.connect", "192.168.10.104:2181");
+//		props.put("zookeeper.connect", "192.168.10.104:2181");
 		props.put("bootstrap.servers", "192.168.10.104:9092");
 		props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 		props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
@@ -52,38 +54,55 @@ public class KafkaConnectionImpl implements KafkaConnection {
 		Student student = Student.builder().id(ID).name("ceshi").timestamp(timestamp).date(new Date())
 				.time(new Time(time)).datetime(timestamp).year(Year.now()).build();
 		add.add(student);
-		
-		
-		producer.send(new ProducerRecord<String, Object>(topic, "meeage", "" + JSONObject.toJSONString(student) + ""));
+		producer.send(new ProducerRecord<String, Object>(topic, "message", "" + JSONObject.toJSONString(student) + ""));
 		producer.close();
+		
+		
+		//消费者
 		Properties posProperties = new Properties();
 //		posProperties.put("zookeeper.connect", "192.168.10.104:2181");
 		posProperties.put("bootstrap.servers", "192.168.10.104:9092");
 		posProperties.put("group.id", "test-consumer-group");
-		posProperties.put("enable.auto.commit", "false");
+		posProperties.put("enable.auto.commit", "false");//如果改为false 则迭代循环获取不到数据
 		posProperties.put("auto.commit.interval.ms", "1000");
-		posProperties.put("auto.offset.reset", "none");
+		/*earliest
+		 * 当各分区下有已提交的offset时，从提交的offset开始消费；无提交的offset时，从头开始消费 
+		 * latest
+		 * 当各分区下有已提交的offset时，从提交的offset开始消费；无提交的offset时，消费新产生的该分区下的数据
+		 *  none
+		 * topic各分区都存在已提交的offset时，从offset后开始消费；只要有一个分区不存在已提交的offset，则抛出异常
+		 */
+		posProperties.put("auto.offset.reset", "earliest");// none 但只有一个分区时 不能为none 
 		posProperties.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 		posProperties.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
 
-//		ConsumerConfig consumerConfig = new ConsumerConfig(posProperties);
 	
-		KafkaConsumer<String, String> consumer = new KafkaConsumer<String, String>(posProperties);
+		KafkaConsumer<String, Object> consumer = new KafkaConsumer<String, Object>(posProperties);
 		// 订阅消息
 		consumer.subscribe(Arrays.asList(topic));
-		ConsumerRecords<String, String> records = consumer.poll(100);
-		for (ConsumerRecord<String, String> record : records) {
-			if (record.value().equals(time + "")) {
-				System.out.println(record.key());
-				System.out.printf("offset = %d, key = %s, value = %s%n,timestamp=%s,timestampType = %s",
-						record.offset(), record.key(), record.value(), record.timestamp(), record.timestampType());
-
-				System.out.print("添加成功");
+		System.out.println("订阅消息");
+		ConsumerRecords<String, Object> records = consumer.poll(1000);
+		
+//		System.out.println("---------------->>>>>>>接受消息+==========>>>"+records.records(topic));
+		
+		for (ConsumerRecord<String, Object> record : records) {
+//			System.out.println(record.value()+"-------------->>>>>>>>");
+//			System.out.println(record.key()+"-------------->>>>>>>>");
+			if (record.topic().equals(topic)) {
+				System.out.println("主题------->>--------->"+record.topic());//topic 
+				System.out.println("键------->>--------->"+record.key());//key
+				System.out.println("分区------->>--------->"+record.partition());//分区
+				System.out.println("时间戳------->>--------->"+record.timestamp());//创建时间
+				System.out.println("偏移------->>--------->"+record.offset());//偏移
+				System.out.println("值------->>--------->"+record.value());//消息体
+				System.out.println("类型------->>--------->"+record.timestampType());//时间类型？？
+//				System.out.printf("offset = %d, key = %s, value = %s%n,timestamp=%s,timestampType = %s",
+//						record.offset(), record.key(), record.value(), record.timestamp(), record.timestampType());
+//				System.out.print("添加成功");
 				consumer.close();
 				return true;
 			}
 		}
-
 		consumer.close();
 		return false;
 	}
