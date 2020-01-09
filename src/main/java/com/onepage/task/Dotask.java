@@ -10,7 +10,7 @@ import com.onepage.service.KafkaConnection;
 public class Dotask {
 	@Resource
 	private KafkaConnection kafkaConnection;
-	@Scheduled(cron = "0/10 * * * * ?")
+//	@Scheduled(cron = "0/10 * * * * ?")
 	public void doTest() {
 		kafkaConnection.isConnection("0", 5566);
 	}
